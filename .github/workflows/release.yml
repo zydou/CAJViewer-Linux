@@ -1,0 +1,75 @@
+---
+name: cajviewer
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        required: true
+        description: download url of the deb package
+        type: string
+        default: https://github.com/zydou/CAJViewer-Linux/releases/download/backup/cajviewer_1.3.22-1_amd64.deb
+      mark_latest:
+        description: whether to mark this release as latest
+        type: boolean
+        default: true
+
+permissions: write-all
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+      - name: build
+        env:
+          url: ${{ inputs.url }}
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y libfuse2
+          bash build.sh
+
+      - name: create release note
+        run: |
+          shasum -a 1 CAJViewer-* > SHA1SUMS
+          echo "Build date: $(date '+%Y-%m-%d %H:%M:%S')" > note.md
+          echo '### SHA1 Checksums' >> note.md
+          echo '```' >> note.md  # Do not use double quotes
+          cat SHA1SUMS >> note.md
+          echo '```' >> note.md
+          cat note.md
+
+      - name: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="$(cat version.txt)"
+          gh release create "${VERSION}" --notes-file note.md --title "${VERSION}" --repo "${{github.repository}}" || true
+          gh release edit "${VERSION}" --notes-file note.md --title "${VERSION}" --repo "${{github.repository}}" || true
+          gh release upload "${VERSION}" ./CAJViewer-* --clobber --repo "${{github.repository}}"
+          gh release upload "${VERSION}" ./SHA1SUMS --clobber --repo "${{github.repository}}"
+
+      - name: create latest release note
+        if: ${{ inputs.mark_latest }}
+        run: |
+          VERSION="$(cat version.txt)"
+          mv -v "CAJViewer-${VERSION}-x86_64.AppImage" "CAJViewer-x86_64.AppImage"
+          mv -v "CAJViewer-${VERSION}-x86_64.tar.xz" "CAJViewer-x86_64.tar.xz"
+          shasum -a 1 CAJViewer-* > SHA1SUMS
+          echo "Build date: $(date '+%Y-%m-%d %H:%M:%S')" > note.md
+          echo '### SHA1 Checksums' >> note.md
+          echo '```' >> note.md  # Do not use double quotes
+          cat SHA1SUMS >> note.md
+          echo '```' >> note.md
+          cat note.md
+
+      - name: update as latest
+        if: ${{ inputs.mark_latest }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="$(cat version.txt)"
+          gh release create "CAJViewer" --prerelease --notes-file note.md --title "${VERSION}" --repo "${{github.repository}}" || true
+          gh release edit "CAJViewer" --prerelease --notes-file note.md --title "${VERSION}" --repo "${{github.repository}}" || true
+          gh release upload "CAJViewer" ./CAJViewer-* --clobber --repo "${{github.repository}}"
+          gh release upload "CAJViewer" ./SHA1SUMS --clobber --repo "${{github.repository}}"

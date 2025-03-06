@@ -12,7 +12,7 @@ wget -O cajviewer.deb "${URL}"
 ar x ./*.deb
 tar xf ./data.tar.*
 mkdir $APP.AppDir
-mv ./opt/apps/cajviewer/* ./$APP.AppDir/
+mv ./opt/cajviewer/* ./$APP.AppDir/
 
 # Parse version
 tar xf ./control.tar.*
@@ -40,8 +40,8 @@ APP=CAJViewer
 HERE="$(dirname "$(readlink -f "${0}")")"
 export LD_LIBRARY_PATH="${HERE}/lib:${LD_LIBRARY_PATH}"
 export DYLD_FALLBACK_LIBRARY_PATH="${LD_LIBRARY_PATH}"
-export QT_FONT_DPI=96
-exec "${HERE}"/$APP "$@"
+# export QT_FONT_DPI=96
+exec "${HERE}"/bin/$APP "$@"
 EOF
 chmod a+x ./$APP.AppDir/AppRun
 

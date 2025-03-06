@@ -8,7 +8,7 @@ on:
         required: true
         description: download url of the deb package
         type: string
-        default: https://github.com/zydou/CAJViewer-Linux/releases/download/backup/cajviewer_1.3.22-1_amd64.deb
+        default: https://github.com/zydou/CAJViewer-Linux/releases/download/backup/cajviewer_9.0_amd64.deb
       mark_latest:
         description: whether to mark this release as latest
         type: boolean
